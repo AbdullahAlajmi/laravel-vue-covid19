@@ -10,43 +10,75 @@ class CountryController extends Controller
 {
     public function index()
     {
-        return response(Countries::all()->jsonSerialize(), Response::HTTP_OK);
+        $countries = array();
+
+        foreach(Countries::all() as $country){
+            $countries[$country["country_code"]] = array(
+                "country_name"=> $country["country_name"],
+                "country_code"=> $country["country_code"],
+                "country_total_confirmed"=> $country["country_total_confirmed"],
+                "country_total_deaths"=> $country["country_total_deaths"],
+                "country_recovered"=> $country["country_recovered"]
+            );
+        }
+        $countries_json = json_encode($countries, true);
+
+        return response($countries_json, Response::HTTP_OK);
     }
 
     public function show($country_code)
     {
-        return response(Countries::where('country_code', $country_code)->first()->jsonSerialize(), Response::HTTP_OK);
+        $db_country = Countries::where('country_code', $country_code)->first();
+        if ($db_country) {
+            return response($db_country->jsonSerialize(), Response::HTTP_OK);
+        }
+        return response("error", Response::HTTP_NOT_FOUND);
     }
 
     public function store(Request $request)
     {
-        $data =  $request->json()->all();
+        $country_code = $request->input('country_code');
+        $country_name = $request->input('country_name');
+        $country_total_confirmed = $request->input('country_total_confirmed');
+        $country_total_deaths = $request->input('country_total_deaths');
+        $country_recovered = $request->input('country_recovered');
 
-        $db_country = Countries::where('country_code', $data["country_code"])->first();
+        $db_country = Countries::where('country_code', $country_code)->first();
         if (!$db_country) {
             $db_country = Countries::Create(
-                ['country_name' => $data["country_name"],
-                    'country_code' => $data["country_code"],
-                    'country_total_confirmed' => $data["country_total_confirmed"],
-                    'country_total_deaths' => $data["country_total_deaths"],
-                    'country_recovered' => $data["country_recovered"]]
+                ['country_name' => $country_name,
+                'country_code' => $country_code,
+                'country_total_confirmed' => $country_total_confirmed,
+                'country_total_deaths' => $country_total_deaths,
+                'country_recovered' => $country_recovered]
             );
 
-            return response(Countries::where('country_code', $data["country_code"])->first()->jsonSerialize(), Response::HTTP_CREATED);
+            return response("success", Response::HTTP_CREATED);
         }
 
-        return response(null,Response::HTTP_CONFLICT);
+        return response("error",Response::HTTP_CONFLICT);
     }
 
     public function update(Request $request, $country_code)
     {
-        $data =  $request->json()->all();
+        $country_name = $request->input('country_name');
+        $country_total_confirmed = $request->input('country_total_confirmed');
+        $country_total_deaths = $request->input('country_total_deaths');
+        $country_recovered = $request->input('country_recovered');
 
-        $db_country = Countries::where('country_code', $country_code)->firstOrFail()->update(
-            ['country_total_confirmed' => $data['country_total_confirmed'],
-            'country_total_deaths' => $data['country_total_deaths'],
-            'country_recovered' => $data['country_recovered']]);
+        try {
+            $db_country = Countries::where('country_code', $country_code)->firstOrFail()->update(
+                [
+                    'country_name' => $country_name,
+                    'country_total_confirmed' => $country_total_confirmed,
+                    'country_total_deaths' => $country_total_deaths,
+                    'country_recovered' => $country_recovered
+                ]);
 
-        return response(Countries::where('country_code', $country_code)->first()->jsonSerialize(), Response::HTTP_OK);
+            return response("success", Response::HTTP_OK);
+
+        } catch (Exception $e) {
+            return response("error", Response::HTTP_NOT_FOUND);
+        }
     }
 }

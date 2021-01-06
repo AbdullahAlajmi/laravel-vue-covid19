@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Countries;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,5 +15,17 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+
+    $countries = array();
+
+    foreach(Countries::all() as $country){
+        $countries[$country["country_code"]] = array("country_name"=> $country["country_name"],
+            "country_total_confirmed"=> $country["country_total_confirmed"],
+            "country_total_deaths"=> $country["country_total_deaths"],
+            "country_recovered"=> $country["country_recovered"]
+        );
+    }
+    $countries_json = json_encode($countries, true);
+
+    return view('index',compact("countries_json"));
 });

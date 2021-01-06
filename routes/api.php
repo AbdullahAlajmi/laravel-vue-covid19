@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\Countries;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Route;
 use App\Models;
 
@@ -36,7 +38,6 @@ Route::get('/fill_data', function (Request $request) {
         $country_total_deaths = (string) $country['TotalDeaths'];
         $country_recovered = (string) $country['TotalRecovered'];
 
-
         $db_country = Models\Countries::updateOrCreate(
             ['country_code' => $country_code],
             ['country_name' => $country_name,
@@ -45,8 +46,20 @@ Route::get('/fill_data', function (Request $request) {
             'country_total_deaths' => $country_total_deaths,
             'country_recovered' => $country_recovered]
         );
-
     }
 
-    return "ok";
+    $countries = array();
+
+    foreach(Countries::all() as $country){
+        $countries[$country["country_code"]] = array(
+            "country_code"=> $country["country_code"],
+            "country_name"=> $country["country_name"],
+            "country_total_confirmed"=> $country["country_total_confirmed"],
+            "country_total_deaths"=> $country["country_total_deaths"],
+            "country_recovered"=> $country["country_recovered"]
+        );
+    }
+    $countries_json = json_encode($countries, true);
+
+    return response($countries_json, Response::HTTP_OK);
 });
